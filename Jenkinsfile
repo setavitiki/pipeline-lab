@@ -60,7 +60,7 @@ pipeline {
                         scp -o StrictHostKeyChecking=no taskflow-${DOCKER_TAG}.tar.gz ubuntu@YOUR-EC2-PUBLIC-IP:/home/ubuntu/
                         
                         # Deploy on EC2
-                        ssh -o StrictHostKeyChecking=no ubuntu@YOUR-EC2-PUBLIC-IP "
+                        ssh -o StrictHostKeyChecking=no ubuntu@13.60.25.113 "
                             # Load Docker image
                             docker load < taskflow-${DOCKER_TAG}.tar.gz
                             
