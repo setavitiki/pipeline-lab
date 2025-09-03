@@ -51,7 +51,7 @@ pipeline {
                         docker save ${DOCKER_IMAGE}:${DOCKER_TAG} | gzip > taskflow-${DOCKER_TAG}.tar.gz
                         
                         # Copy image to EC2
-                        scp -o StrictHostKeyChecking=no taskflow-${DOCKER_TAG}.tar.gz ubuntu@YOUR-EC2-PUBLIC-IP:/home/ubuntu/
+                        scp -o StrictHostKeyChecking=no taskflow-${DOCKER_TAG}.tar.gz ubuntu@13.60.25.113:/home/ubuntu/
                         
                         # Deploy on EC2
                         ssh -o StrictHostKeyChecking=no ubuntu@13.60.25.113 "
