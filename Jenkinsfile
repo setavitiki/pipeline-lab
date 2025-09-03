@@ -60,22 +60,22 @@ pipeline {
                         
                         # Save Docker image as compressed tarball
                         docker save ${DOCKER_IMAGE}:${DOCKER_TAG} | gzip > taskflow-${DOCKER_TAG}.tar.gz
-                        echo "Docker image saved to tarball"
+                        echo "Docker image saved: taskflow-${DOCKER_TAG}.tar.gz"
                         
                         # Copy tarball to EC2
                         scp -o StrictHostKeyChecking=no taskflow-${DOCKER_TAG}.tar.gz ubuntu@13.60.25.113:/home/ubuntu/
                         echo "Tarball copied to EC2"
                         
-                        # Deploy on EC2
-                        ssh -o StrictHostKeyChecking=no ubuntu@13.60.25.113 << 'EOF'
-                            echo "Loading Docker image on EC2..."
+                        # Deploy on EC2 with variables properly passed
+                        ssh -o StrictHostKeyChecking=no ubuntu@13.60.25.113 "
+                            echo 'Loading Docker image on EC2...'
                             docker load < taskflow-${DOCKER_TAG}.tar.gz
                             
-                            echo "Stopping existing container..."
+                            echo 'Stopping existing container...'
                             docker stop taskflow-app || true
                             docker rm taskflow-app || true
                             
-                            echo "Starting new container..."
+                            echo 'Starting new container...'
                             docker run -d \\
                                 --name taskflow-app \\
                                 -p 80:5000 \\
@@ -85,15 +85,15 @@ pipeline {
                                 --restart unless-stopped \\
                                 ${DOCKER_IMAGE}:${DOCKER_TAG}
                             
-                            echo "Container started successfully"
+                            echo 'Verifying container started...'
                             docker ps | grep taskflow-app
                             
-                            # Cleanup
+                            echo 'Cleaning up...'
                             rm -f taskflow-${DOCKER_TAG}.tar.gz
                             docker image prune -f
-EOF
+                        "
                         
-                        # Cleanup local tarball
+                        # Clean up local tarball
                         rm -f taskflow-${DOCKER_TAG}.tar.gz
                         echo "Deployment completed successfully!"
                     '''
