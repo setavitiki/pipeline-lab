@@ -14,6 +14,21 @@ pipeline {
                 sh 'echo "Commit: ${GIT_COMMIT}"'
             }
         }
+
+        stage('Debug Environment') {
+            steps {
+                sh '''
+                    echo "=== Environment Debug ==="
+                    echo "GIT_BRANCH: ${GIT_BRANCH}"
+                    echo "BRANCH_NAME: ${BRANCH_NAME}"
+                    echo "BUILD_NUMBER: ${BUILD_NUMBER}"
+                    echo "DOCKER_IMAGE: ${DOCKER_IMAGE}"
+                    echo "DOCKER_TAG: ${DOCKER_TAG}"
+                    echo "Current working directory: $(pwd)"
+                    echo "Git status: $(git status --porcelain)"
+                '''
+            }
+        }
         
         stage('Lint & Test') {
             steps {
