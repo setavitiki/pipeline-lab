@@ -11,6 +11,9 @@ RUN useradd --create-home --shell /bin/bash appuser
 
 WORKDIR /app
 
+# Create logs directory with proper permissions
+RUN mkdir -p logs && chmod 755 logs
+
 # Copy installed packages from builder (system-wide installation)
 COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
