@@ -43,7 +43,7 @@ pipeline {
             }
         }
         
-        stage('Deploy to Kubernetes') {
+        stage('Deploy to AWS EC2') {
             when {
                 anyOf {
                     branch 'main'
@@ -51,22 +51,47 @@ pipeline {
                 }
             }
             steps {
-                sh '''
-                    # Load image into minikube
-                    minikube image load ${DOCKER_IMAGE}:${DOCKER_TAG}
-                    
-                    # Update deployment with new image
-                    kubectl set image deployment/taskflow-app taskflow=${DOCKER_IMAGE}:${DOCKER_TAG}
-                    
-                    # Wait for rollout to complete
-                    kubectl rollout status deployment/taskflow-app --timeout=300s
-                    
-                    # Verify deployment
-                    kubectl get pods -l app=taskflow
-                '''
+                sshagent(['ec2-deploy-key']) {
+                    sh '''
+                        # Build and save Docker image as tar
+                        docker save ${DOCKER_IMAGE}:${DOCKER_TAG} | gzip > taskflow-${DOCKER_TAG}.tar.gz
+                        
+                        # Copy image to EC2
+                        scp -o StrictHostKeyChecking=no taskflow-${DOCKER_TAG}.tar.gz ubuntu@YOUR-EC2-PUBLIC-IP:/home/ubuntu/
+                        
+                        # Deploy on EC2
+                        ssh -o StrictHostKeyChecking=no ubuntu@YOUR-EC2-PUBLIC-IP "
+                            # Load Docker image
+                            docker load < taskflow-${DOCKER_TAG}.tar.gz
+                            
+                            # Stop existing container if running
+                            docker stop taskflow-app || true
+                            docker rm taskflow-app || true
+                            
+                            # Run new container
+                            docker run -d \\
+                                --name taskflow-app \\
+                                -p 80:5000 \\
+                                -e ENVIRONMENT=production \\
+                                -e APP_VERSION=${DOCKER_TAG} \\
+                                -e BUILD_NUMBER=${BUILD_NUMBER} \\
+                                --restart unless-stopped \\
+                                ${DOCKER_IMAGE}:${DOCKER_TAG}
+                            
+                            # Clean up old images
+                            docker image prune -f
+                            
+                            # Remove tar file
+                            rm -f taskflow-${DOCKER_TAG}.tar.gz
+                        "
+                        
+                        # Clean up local tar file
+                        rm -f taskflow-${DOCKER_TAG}.tar.gz
+                    '''
+                }
             }
         }
-        
+
         stage('Health Check') {
             when {
                 anyOf {
@@ -76,17 +101,19 @@ pipeline {
             }
             steps {
                 sh '''
-                    # Wait for service to be ready
+                    # Wait for application to start
                     sleep 30
                     
-                    # Get service URL and test health
-                    SERVICE_URL=$(minikube service taskflow-service --url)
+                    # Health check using nip.io domain
+                    EC2_IP="13.60.25.113"
+                    SERVICE_URL="http://${EC2_IP}.nip.io"
                     echo "Testing service at: $SERVICE_URL"
                     
                     # Health check with retry
-                    for i in {1..5}; do
+                    for i in {1..10}; do
                         if curl -f $SERVICE_URL/health; then
                             echo "Health check passed!"
+                            echo "Application accessible at: $SERVICE_URL"
                             break
                         else
                             echo "Health check failed, retrying in 10 seconds..."
