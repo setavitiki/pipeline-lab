@@ -44,12 +44,6 @@ pipeline {
         }
         
         stage('Deploy to AWS EC2') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'develop'
-                }
-            }
             steps {
                 sshagent(['ec2-deploy-key']) {
                     sh '''
@@ -93,12 +87,6 @@ pipeline {
         }
 
         stage('Health Check') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'develop'
-                }
-            }
             steps {
                 sh '''
                     # Wait for application to start
