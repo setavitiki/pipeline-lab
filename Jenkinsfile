@@ -14,18 +14,15 @@ pipeline {
                 sh 'echo "Commit: ${GIT_COMMIT}"'
             }
         }
-
+        
         stage('Debug Environment') {
             steps {
                 sh '''
                     echo "=== Environment Debug ==="
                     echo "GIT_BRANCH: ${GIT_BRANCH}"
-                    echo "BRANCH_NAME: ${BRANCH_NAME}"
                     echo "BUILD_NUMBER: ${BUILD_NUMBER}"
                     echo "DOCKER_IMAGE: ${DOCKER_IMAGE}"
                     echo "DOCKER_TAG: ${DOCKER_TAG}"
-                    echo "Current working directory: $(pwd)"
-                    echo "Git status: $(git status --porcelain)"
                 '''
             }
         }
@@ -39,10 +36,7 @@ pipeline {
                     pip install -r requirements.txt
                     pip install flake8
                     
-                    # Basic linting
                     flake8 app.py --max-line-length=88 || echo "Linting warnings found"
-                    
-                    # Basic import test
                     python -c "import app; print('App imports successfully')"
                 '''
             }
@@ -58,37 +52,30 @@ pipeline {
             }
         }
         
-        stage('Test SSH Connection') {
-            steps {
-                sshagent(['ec2-deploy-key']) {
-                    sh '''
-                        echo "Testing SSH connection to EC2..."
-                        ssh -o StrictHostKeyChecking=no ubuntu@13.60.25.113 "echo 'SSH connection successful'; whoami; docker --version"
-                    '''
-                }
-            }
-        }        
-
         stage('Deploy to AWS EC2') {
             steps {
                 sshagent(['ec2-deploy-key']) {
                     sh '''
-                        # Build and save Docker image as tar
-                        docker save ${DOCKER_IMAGE}:${DOCKER_TAG} | gzip > taskflow-${DOCKER_TAG}.tar.gz
+                        echo "Starting deployment to EC2..."
                         
-                        # Copy image to EC2
+                        # Save Docker image as compressed tarball
+                        docker save ${DOCKER_IMAGE}:${DOCKER_TAG} | gzip > taskflow-${DOCKER_TAG}.tar.gz
+                        echo "Docker image saved to tarball"
+                        
+                        # Copy tarball to EC2
                         scp -o StrictHostKeyChecking=no taskflow-${DOCKER_TAG}.tar.gz ubuntu@13.60.25.113:/home/ubuntu/
+                        echo "Tarball copied to EC2"
                         
                         # Deploy on EC2
-                        ssh -o StrictHostKeyChecking=no ubuntu@13.60.25.113 "
-                            # Load Docker image
+                        ssh -o StrictHostKeyChecking=no ubuntu@13.60.25.113 << 'EOF'
+                            echo "Loading Docker image on EC2..."
                             docker load < taskflow-${DOCKER_TAG}.tar.gz
                             
-                            # Stop existing container if running
+                            echo "Stopping existing container..."
                             docker stop taskflow-app || true
                             docker rm taskflow-app || true
                             
-                            # Run new container
+                            echo "Starting new container..."
                             docker run -d \\
                                 --name taskflow-app \\
                                 -p 80:5000 \\
@@ -98,15 +85,17 @@ pipeline {
                                 --restart unless-stopped \\
                                 ${DOCKER_IMAGE}:${DOCKER_TAG}
                             
-                            # Clean up old images
-                            docker image prune -f
+                            echo "Container started successfully"
+                            docker ps | grep taskflow-app
                             
-                            # Remove tar file
+                            # Cleanup
                             rm -f taskflow-${DOCKER_TAG}.tar.gz
-                        "
+                            docker image prune -f
+EOF
                         
-                        # Clean up local tar file
+                        # Cleanup local tarball
                         rm -f taskflow-${DOCKER_TAG}.tar.gz
+                        echo "Deployment completed successfully!"
                     '''
                 }
             }
@@ -115,22 +104,37 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh '''
-                    # Wait for application to start
+                    echo "Starting health check..."
                     sleep 30
                     
-                    # Health check using nip.io domain
                     EC2_IP="13.60.25.113"
                     SERVICE_URL="http://${EC2_IP}.nip.io"
-                    echo "Testing service at: $SERVICE_URL"
+                    DIRECT_URL="http://${EC2_IP}"
                     
-                    # Health check with retry
-                    for i in {1..10}; do
+                    echo "Testing service at: $SERVICE_URL"
+                    echo "Direct IP test: $DIRECT_URL"
+                    
+                    # Test direct IP first
+                    for i in {1..5}; do
+                        echo "Direct IP health check attempt $i..."
+                        if curl -f $DIRECT_URL/health; then
+                            echo "Direct IP health check passed!"
+                            break
+                        else
+                            echo "Direct IP check failed, retrying in 10 seconds..."
+                            sleep 10
+                        fi
+                    done
+                    
+                    # Test nip.io domain
+                    for i in {1..5}; do
+                        echo "nip.io health check attempt $i..."
                         if curl -f $SERVICE_URL/health; then
-                            echo "Health check passed!"
+                            echo "nip.io health check passed!"
                             echo "Application accessible at: $SERVICE_URL"
                             break
                         else
-                            echo "Health check failed, retrying in 10 seconds..."
+                            echo "nip.io check failed, retrying in 10 seconds..."
                             sleep 10
                         fi
                     done
@@ -146,6 +150,8 @@ pipeline {
         }
         success {
             echo 'Pipeline completed successfully!'
+            echo 'Application deployed to AWS EC2!'
+            echo 'Access at: http://13.60.25.113.nip.io'
         }
         failure {
             echo 'Pipeline failed! Check logs for details.'
