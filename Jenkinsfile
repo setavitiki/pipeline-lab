@@ -58,6 +58,17 @@ pipeline {
             }
         }
         
+        stage('Test SSH Connection') {
+            steps {
+                sshagent(['ec2-deploy-key']) {
+                    sh '''
+                        echo "Testing SSH connection to EC2..."
+                        ssh -o StrictHostKeyChecking=no ubuntu@13.60.25.113 "echo 'SSH connection successful'; whoami; docker --version"
+                    '''
+                }
+            }
+        }        
+
         stage('Deploy to AWS EC2') {
             steps {
                 sshagent(['ec2-deploy-key']) {
