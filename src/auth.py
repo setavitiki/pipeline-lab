@@ -18,3 +18,11 @@ def require_auth(f):
             return jsonify({'error': 'Authentication required'}), 401
         return f(*args, **kwargs)
     return decorated
+
+def get_user_role(username):
+    """Get user role for authorization"""
+    roles = {
+        'admin': ['read', 'write', 'delete'],
+        'user': ['read', 'write']
+    }
+    return roles.get(username, ['read'])
