@@ -1,8 +1,3 @@
-# Professional README.md for TaskFlow
-
-Here's a comprehensive, professional README without emojis and security concerns properly addressed:
-
-```markdown
 # TaskFlow
 
 A production-grade task management API built with Flask, demonstrating modern DevOps practices including containerization, automated CI/CD pipelines, and comprehensive monitoring.
@@ -83,19 +78,19 @@ TaskFlow is a RESTful API application designed to demonstrate enterprise-level D
 ### Example Usage
 
 **Create a new task:**
-```
+```bash
 curl -X POST http://your-domain/tasks \
   -H "Content-Type: application/json" \
   -d '{"title": "Complete project documentation"}'
 ```
 
 **Retrieve all tasks:**
-```
+```bash
 curl http://your-domain/tasks
 ```
 
 **Check application health:**
-```
+```bash
 curl http://your-domain/health
 ```
 
@@ -109,23 +104,23 @@ curl http://your-domain/health
 ### Local Development Setup
 
 1. Clone the repository:
-```
+```bash
 git clone https://github.com/yourusername/taskflow-app.git
 cd taskflow-app
 ```
 
 2. Build the Docker image:
-```
+```bash
 docker build -f docker/Dockerfile -t taskflow-app .
 ```
 
 3. Run the application:
-```
+```bash
 docker run -d -p 5000:5000 --name taskflow-app taskflow-app
 ```
 
 4. Verify the deployment:
-```
+```bash
 curl http://localhost:5000/health
 ```
 
@@ -238,4 +233,3 @@ For technical inquiries and support, please refer to the project documentation o
 ## Author
 
 Shaun T
-```
