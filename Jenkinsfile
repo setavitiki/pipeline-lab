@@ -63,11 +63,11 @@ pipeline {
                         echo "Docker image saved: taskflow-${DOCKER_TAG}.tar.gz"
                         
                         # Copy tarball to EC2
-                        scp -o StrictHostKeyChecking=no taskflow-${DOCKER_TAG}.tar.gz ubuntu@13.60.25.113:/home/ubuntu/
+                        scp -o StrictHostKeyChecking=no taskflow-${DOCKER_TAG}.tar.gz ec2-user@65.1.13.126:/home/ec2-user/
                         echo "Tarball copied to EC2"
                         
                         # Deploy on EC2 with variables properly passed
-                        ssh -o StrictHostKeyChecking=no ubuntu@13.60.25.113 "
+                        ssh -o StrictHostKeyChecking=no ec2-user@65.1.13.126 "
                             echo 'Loading Docker image on EC2...'
                             docker load < taskflow-${DOCKER_TAG}.tar.gz
                             
@@ -107,7 +107,7 @@ pipeline {
                     echo "Starting health check..."
                     sleep 30
                     
-                    EC2_IP="13.60.25.113"
+                    EC2_IP="65.1.13.126"
                     SERVICE_URL="http://${EC2_IP}.nip.io"
                     DIRECT_URL="http://${EC2_IP}"
                     
@@ -151,7 +151,7 @@ pipeline {
         success {
             echo 'Pipeline completed successfully!'
             echo 'Application deployed to AWS EC2!'
-            echo 'Access at: http://13.60.25.113.nip.io'
+            echo 'Access at: http://65.1.13.126.nip.io'
         }
         failure {
             echo 'Pipeline failed! Check logs for details.'
