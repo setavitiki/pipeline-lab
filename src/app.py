@@ -1,24 +1,52 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 import logging
 import os
 import time
 from datetime import datetime
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 app = Flask(__name__)
 
-# Configure logging for log collection practice
+# Configure logging
+log_dir = os.path.join(os.getcwd(), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(name)s %(message)s',
     handlers=[
-        logging.FileHandler('/tmp/taskflow.log'),
+        logging.FileHandler(os.path.join(log_dir, 'taskflow.log')),
         logging.StreamHandler()
     ]
 )
+
 logger = logging.getLogger(__name__)
 
 # In-memory task storage
 tasks = []
+
+# Prometheus metrics
+REQUEST_COUNT = Counter('taskflow_requests_total', 'Total HTTP requests', ['method', 'endpoint'])
+REQUEST_LATENCY = Histogram('taskflow_request_latency_seconds', 'HTTP request latency in seconds', ['method', 'endpoint'])
+TASK_COUNT = Counter('taskflow_tasks_total', 'Total number of tasks created')
+APP_INFO = Counter('taskflow_app_info', 'Application info', ['version'])
+
+# Initialize app info metric
+APP_INFO.labels(version=os.getenv('APP_VERSION', '1.0')).inc()
+
+@app.before_request
+def before_request():
+    request.start_time = time.time()
+    endpoint = request.endpoint if request.endpoint else 'unknown'
+    REQUEST_COUNT.labels(method=request.method, endpoint=endpoint).inc()
+
+@app.after_request
+def after_request(response):
+    if hasattr(request, 'start_time'):
+        duration = time.time() - request.start_time
+        endpoint = request.endpoint if request.endpoint else 'unknown'
+        REQUEST_LATENCY.labels(method=request.method, endpoint=endpoint).observe(duration)
+    return response
 
 @app.route('/')
 def home():
@@ -40,6 +68,7 @@ def manage_tasks():
             'created_at': datetime.now().isoformat()
         }
         tasks.append(task)
+        TASK_COUNT.inc()  # Increment task counter
         logger.info(f"New task created: {task['title']}")
         return jsonify({"status": "created", "task": task}), 201
     
@@ -56,17 +85,8 @@ def health():
 
 @app.route('/metrics')
 def metrics():
-    return f"""# HELP taskflow_tasks```tal Total number of tasks
-# TYPE taskflow_tasks_total counter```skflow_tasks_total {len(tasks)}
-
-# HELP taskflow_requests_total Total HTTP```quests
-# TYPE taskflow_requests_total counter
-taskflow_requests_total 1
-
-# HELP taskflow_app_info Application```fo
-# TYPE taskflow_app_info gauge
-taskflow_app_info{{version="{os.getenv('APP_VERSION', '1.0')}"}} 1
-"""
+    """Prometheus metrics endpoint"""
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
 if __name__ == '__main__':
     logger.info("TaskFlow application starting...")
