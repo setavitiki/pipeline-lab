@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: taskflow-app
+  name: pipeline-lab
   labels:
-    app: taskflow
+    app: pipeline-lab
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: taskflow
+      app: pipeline-lab
   template:
     metadata:
       labels:
-        app: taskflow
+        app: pipeline-lab
     spec:
       containers:
-      - name: taskflow
-        image: taskflow-app:v1.0
+      - name: pipeline-lab
+        image: pipeline-lab:v1.0
         ports:
         - containerPort: 5000
         env:

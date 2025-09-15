@@ -15,7 +15,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(name)s %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'taskflow.log')),
+        logging.FileHandler(os.path.join(log_dir, 'pipeline-lab.log')),
         logging.StreamHandler()
     ]
 )
@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 tasks = []
 
 # Prometheus metrics
-REQUEST_COUNT = Counter('taskflow_requests_total', 'Total HTTP requests', ['method', 'endpoint'])
-REQUEST_LATENCY = Histogram('taskflow_request_latency_seconds', 'HTTP request latency in seconds', ['method', 'endpoint'])
-TASK_COUNT = Counter('taskflow_tasks_total', 'Total number of tasks created')
-APP_INFO = Counter('taskflow_app_info', 'Application info', ['version'])
+REQUEST_COUNT = Counter('pipeline-lab_requests_total', 'Total HTTP requests', ['method', 'endpoint'])
+REQUEST_LATENCY = Histogram('pipeline-lab_request_latency_seconds', 'HTTP request latency in seconds', ['method', 'endpoint'])
+TASK_COUNT = Counter('pipeline-lab_tasks_total', 'Total number of tasks created')
+APP_INFO = Counter('pipeline-lab_app_info', 'Application info', ['version'])
 
 # Initialize app info metric
 APP_INFO.labels(version=os.getenv('APP_VERSION', '1.0')).inc()
