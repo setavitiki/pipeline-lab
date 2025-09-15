@@ -1,4 +1,4 @@
-# TaskFlow
+# pipeline-lab
 
 A production-grade task management API built with Flask, demonstrating modern DevOps practices including containerization, automated CI/CD pipelines, and comprehensive monitoring.
 
@@ -22,7 +22,7 @@ Prometheus + Grafana Monitoring Stack
 
 ## Project Overview
 
-TaskFlow is a RESTful API application designed to demonstrate enterprise-level DevOps automation practices. The project implements a complete software delivery pipeline from source control to production deployment with real-time monitoring and observability.
+pipeline-lab is a RESTful API application designed to demonstrate enterprise-level DevOps automation practices. The project implements a complete software delivery pipeline from source control to production deployment with real-time monitoring and observability.
 
 ## Technology Stack
 
@@ -105,18 +105,18 @@ curl http://your-domain/health
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/taskflow-app.git
-cd taskflow-app
+git clone https://github.com/yourusername/pipeline-lab.git
+cd pipeline-lab
 ```
 
 2. Build the Docker image:
 ```bash
-docker build -f docker/Dockerfile -t taskflow-app .
+docker build -f docker/Dockerfile -t pipeline-lab .
 ```
 
 3. Run the application:
 ```bash
-docker run -d -p 5000:5000 --name taskflow-app taskflow-app
+docker run -d -p 5000:5000 --name pipeline-lab pipeline-lab
 ```
 
 4. Verify the deployment:
@@ -145,10 +145,10 @@ The application is automatically deployed to AWS EC2 through a Jenkins CI/CD pip
 The application exposes comprehensive metrics for monitoring and observability:
 
 ### Available Metrics
-- `taskflow_requests_total`: HTTP request counter with method and endpoint labels
-- `taskflow_request_latency_seconds`: Request response time histogram
-- `taskflow_tasks_total`: Total number of tasks created
-- `taskflow_app_info`: Application version and build information
+- `pipeline-lab_requests_total`: HTTP request counter with method and endpoint labels
+- `pipeline-lab_request_latency_seconds`: Request response time histogram
+- `pipeline-lab_tasks_total`: Total number of tasks created
+- `pipeline-lab_app_info`: Application version and build information
 
 ### Performance Monitoring
 Real-time dashboards provide visibility into:
@@ -180,7 +180,7 @@ Real-time dashboards provide visibility into:
 ## Project Structure
 
 ```
-taskflow-app/
+pipeline-lab/
 ├── src/
 │   ├── app.py              # Main Flask application
 │   └── requirements.txt    # Python dependencies
