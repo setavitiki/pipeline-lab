@@ -222,14 +222,14 @@ This project follows standard software development practices:
 5. Automated pipeline validates changes
 6. Merge to develop branch triggers deployment
 
-## License
-
-This project is licensed under the GPL-3.0 license.
-
 ## Technical Support
 
 For technical inquiries and support, please refer to the project documentation or submit issues through the appropriate channels.
 
+## License
+
+This project is licensed under the MIT License.
+
 ## Author
 
-Shaun T
+**Shaun Tavitiki**  
